@@ -92,7 +92,7 @@ class ParserTests: SafeXCTestCase {
             let (result, remainder) = XCTUnwrap(parser.run("123 321 234 abc"))
             
             XCTAssertEqual(result, [123, 321, 234])
-            XCTAssertEqual(remainder, "abc")
+            XCTAssertEqual(remainder, " abc")
         }
         
         do {
@@ -110,7 +110,7 @@ class ParserTests: SafeXCTestCase {
         let (result, remainder) = XCTUnwrap(parser.run("123 321 234 abc"))
         
         XCTAssertEqual(result, [123, 321, 234])
-        XCTAssertEqual(remainder, "abc")
+        XCTAssertEqual(remainder, " abc")
         
         XCTAssertNil(parser.run("abc 123"))
     }

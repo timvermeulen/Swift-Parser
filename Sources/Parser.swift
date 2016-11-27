@@ -46,14 +46,14 @@ extension Parser {
 extension Parser {
     public func any<Separator>(separator: Parser<Separator>) -> Parser<[Value]> {
         return .init { input in
-            var remainder = input
-            var result: [Value] = []
+            guard let (firstValue, firstRemainder) = self.parse(input) else { return ([], input) }
             
-            while let (component, nextRemainder) = self.parse(remainder) {
-                remainder = nextRemainder
+            var remainder = firstRemainder
+            var result = [firstValue]
+            
+            while let (_, nextRemainder) = separator.parse(remainder) {
+                guard let (component, nextNextRemainder) = self.parse(nextRemainder) else { break }
                 result.append(component)
-                
-                guard let (_, nextNextRemainder) = separator.parse(nextRemainder) else { break }
                 remainder = nextNextRemainder
             }
             

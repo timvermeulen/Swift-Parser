@@ -1,40 +1,40 @@
-public struct Parser<Result> {
-    internal let parse: (Substring) -> (result: Result, remainder: Substring)?
+public struct Parser<Stream: StreamType, Result> {
+    internal let parse: (Stream.SubSequence) -> (result: Result, remainder: Stream.SubSequence)?
 }
 
 extension Parser {
-    public func run(_ string: String) -> (result: Result, remainder: String)? {
-        guard let (result, remainder) = parse(string[...]) else { return nil }
-        return (result, String(remainder))
+    public func run(_ input: Stream) -> (result: Result, remainder: Stream)? {
+        guard let (result, remainder) = parse(input[...]) else { return nil }
+        return (result, Stream(remainder))
     }
 }
 
 extension Parser {
-    static func result(_ output: Result) -> Parser {
+    public static func result(_ output: Result) -> Parser {
         return Parser { input in
             (output, input)
         }
     }
     
-    static var zero: Parser {
+    public static var zero: Parser {
         return Parser { _ in nil }
     }
     
-    public func map<NewResult>(_ transform: @escaping (Result) -> NewResult) -> Parser<NewResult> {
+    public func map<NewResult>(_ transform: @escaping (Result) -> NewResult) -> Parser<Stream, NewResult> {
         return .init { input in
             guard let (output, remainder) = self.parse(input) else { return nil }
             return (transform(output), remainder)
         }
     }
     
-    public func flatMap<NewResult>(_ transform: @escaping (Result) -> Parser<NewResult>) -> Parser<NewResult> {
+    public func flatMap<NewResult>(_ transform: @escaping (Result) -> Parser<Stream, NewResult>) -> Parser<Stream, NewResult> {
         return .init { input in
             guard let (output, remainder) = self.parse(input) else { return nil }
             return transform(output).parse(remainder)
         }
     }
     
-    public func flatMap<NewResult>(_ transform: @escaping (Result) -> NewResult?) -> Parser<NewResult> {
+    public func flatMap<NewResult>(_ transform: @escaping (Result) -> NewResult?) -> Parser<Stream, NewResult> {
         return flatMap { transform($0).map { .result($0) } ?? .zero }
     }
     
@@ -44,7 +44,7 @@ extension Parser {
 }
 
 extension Parser {
-    public func any<Separator>(separator: Parser<Separator>) -> Parser<[Result]> {
+    public func any<Separator>(separator: Parser<Stream, Separator>) -> Parser<Stream, [Result]> {
         return .init { input in
             guard let (firstResult, firstRemainder) = self.parse(input) else { return ([], input) }
             
@@ -60,25 +60,25 @@ extension Parser {
         }
     }
     
-    public var any: Parser<[Result]> {
+    public var any: Parser<Stream, [Result]> {
         return any(separator: .empty)
     }
     
-    public func many<Separator>(separator: Parser<Separator>) -> Parser<[Result]> {
+    public func many<Separator>(separator: Parser<Stream, Separator>) -> Parser<Stream, [Result]> {
         return any(separator: separator).nonEmpty
     }
     
-    public var many: Parser<[Result]> {
+    public var many: Parser<Stream, [Result]> {
         return many(separator: .empty)
     }
     
-    static func ?? (left: Parser, right: @escaping @autoclosure () -> Parser) -> Parser {
+    public static func ?? (left: Parser, right: @escaping @autoclosure () -> Parser) -> Parser {
         return Parser { input in
             left.parse(input) ?? right().parse(input)
         }
     }
     
-    var optional: Parser<Result?> {
+    public var optional: Parser<Stream, Result?> {
         return .init { input in
             guard let (result, remainder) = self.parse(input) else { return (nil, input) }
             return (result, remainder)
@@ -87,7 +87,16 @@ extension Parser {
 }
 
 extension Parser where Result: Collection {
-    var nonEmpty: Parser {
+    public var nonEmpty: Parser {
         return filter { !$0.isEmpty }
+    }
+}
+
+extension Parser where Result == Stream.Element {
+    public static var item: Parser {
+        return Parser { input in
+            guard let first = input.first else { return nil }
+            return (first, input.dropFirst())
+        }
     }
 }

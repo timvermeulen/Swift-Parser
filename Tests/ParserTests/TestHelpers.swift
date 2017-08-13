@@ -1,9 +1,9 @@
 import XCTest
 @testable import Parser
 
-extension Parser where Result: Equatable {
-    func assertRun(_ string: String, result: Result, remainder: String, file: StaticString = #file, line: UInt = #line) {
-        let parseResult = run(string)
+extension Parser where Result: Equatable, Stream: Equatable {
+    func assertRun(_ input: Stream, result: Result, remainder: Stream, file: StaticString = #file, line: UInt = #line) {
+        let parseResult = run(input)
         XCTAssertNotNil(parseResult, file: file, line: line)
         
         if let (actualResult, actualRemainder) = parseResult {
@@ -13,9 +13,9 @@ extension Parser where Result: Equatable {
     }
 }
 
-extension Parser {
-    func assertSucceed(_ string: String, remainder: String, file: StaticString = #file, line: UInt = #line) {
-        let parseResult = run(string)
+extension Parser where Stream: Equatable {
+    func assertSucceed(_ input: Stream, remainder: Stream, file: StaticString = #file, line: UInt = #line) {
+        let parseResult = run(input)
         XCTAssertNotNil(parseResult, file: file, line: line)
         
         if let (_, actualRemainder) = parseResult {
@@ -23,8 +23,8 @@ extension Parser {
         }
     }
     
-    func assertFail(_ string: String, file: StaticString = #file, line: UInt = #line) {
-        XCTAssertNil(run(string), file: file, line: line)
+    func assertFail(_ input: Stream, file: StaticString = #file, line: UInt = #line) {
+        XCTAssertNil(run(input), file: file, line: line)
     }
 }
 
@@ -39,9 +39,9 @@ extension Optional: _Optional {
     var optional: Optional { return self }
 }
 
-extension Parser where Result: _Optional, Result.Wrapped: Equatable {
-    func assertRun(_ string: String, result: Result.Wrapped?, remainder: String, file: StaticString = #file, line: UInt = #line) {
-        let parseResult = run(string)
+extension Parser where Result: _Optional, Result.Wrapped: Equatable, Stream: Equatable {
+    func assertRun(_ input: Stream, result: Result.Wrapped?, remainder: Stream, file: StaticString = #file, line: UInt = #line) {
+        let parseResult = run(input)
         XCTAssertNotNil(parseResult, file: file, line: line)
         
         if let (actualResult, actualRemainder) = parseResult {
@@ -60,9 +60,9 @@ extension Array: _Array {
     var array: Array { return self }
 }
 
-extension Parser where Result: _Array, Result.Element: Equatable {
-    func assertRun(_ string: String, result: [Result.Element], remainder: String, file: StaticString = #file, line: UInt = #line) {
-        let parseResult = run(string)
+extension Parser where Result: _Array, Result.Element: Equatable, Stream: Equatable {
+    func assertRun(_ input: Stream, result: [Result.Element], remainder: Stream, file: StaticString = #file, line: UInt = #line) {
+        let parseResult = run(input)
         XCTAssertNotNil(parseResult, file: file, line: line)
         
         if let (actualResult, actualRemainder) = parseResult {

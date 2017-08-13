@@ -74,4 +74,18 @@ final class ParserTests: XCTestCase {
         parser.assertRun("abc", result: "a", remainder: "bc")
         parser.assertRun("BCD", result: "BC", remainder: "D")
     }
+    
+    func testOperators() {
+        let parser = curry(Foo.init) <^> .string("test: ") *> Parser.number <* .string(", ") <*> Parser.word
+        parser.assertRun("test: 123, hey875", result: Foo(number: 123, word: "hey"), remainder: "875")
+    }
+}
+
+struct Foo: Equatable {
+    let number: Int
+    let word: String
+    
+    static func == (left: Foo, right: Foo) -> Bool {
+        return left.number == right.number && left.word == right.word
+    }
 }

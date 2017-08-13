@@ -1,4 +1,4 @@
-extension Parser where Value == Character {
+extension Parser where Result == Character {
     public static var character: Parser {
         return Parser { input in
             guard let first = input.first else { return nil }
@@ -11,9 +11,9 @@ extension Parser where Value == Character {
     }
 }
 
-extension Parser where Value == Int {
+extension Parser where Result == Int {
     public static var digit: Parser {
-        return Parser<Character>.character.flatMap { Int($0) }
+        return Parser<Character>.character.flatMap { Result($0) }
     }
     
     public static var number: Parser {
@@ -21,7 +21,7 @@ extension Parser where Value == Int {
     }
 }
 
-extension Parser where Value == Void {
+extension Parser where Result == Void {
     public static var empty: Parser {
         return Parser { ((), $0) }
     }

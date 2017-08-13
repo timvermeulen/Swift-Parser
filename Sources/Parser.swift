@@ -10,8 +10,14 @@ extension Parser {
 }
 
 extension Parser {
-    public init(value: Result) {
-        self.init { input in (value, input) }
+    static func result(_ output: Result) -> Parser {
+        return Parser { input in
+            (output, input)
+        }
+    }
+    
+    static var zero: Parser {
+        return Parser { _ in nil }
     }
     
     public func map<NewResult>(_ transform: @escaping (Result) -> NewResult) -> Parser<NewResult> {
@@ -21,24 +27,19 @@ extension Parser {
         }
     }
     
-    public func flatMap<NewResult>(_ transform: @escaping (Result) -> NewResult?) -> Parser<NewResult> {
-        return .init { input in
-            guard let (output, remainder) = self.parse(input), let transformed = transform(output) else { return nil }
-            return (transformed, remainder)
-        }
-    }
-    
     public func flatMap<NewResult>(_ transform: @escaping (Result) -> Parser<NewResult>) -> Parser<NewResult> {
         return .init { input in
             guard let (output, remainder) = self.parse(input) else { return nil }
             return transform(output).parse(remainder)
         }
     }
-}
-
-extension Parser {
-    public init(_ parser: Parser, where predicate: @escaping (Result) -> Bool) {
-        self = parser.flatMap { Optional($0, where: predicate) }
+    
+    public func flatMap<NewResult>(_ transform: @escaping (Result) -> NewResult?) -> Parser<NewResult> {
+        return flatMap { transform($0).map { .result($0) } ?? .zero }
+    }
+    
+    func filter(_ predicate: @escaping (Result) -> Bool) -> Parser {
+        return flatMap { Optional($0, where: predicate) }
     }
 }
 
@@ -64,7 +65,7 @@ extension Parser {
     }
     
     public func many<Separator>(separator: Parser<Separator>) -> Parser<[Result]> {
-        return .init(any(separator: separator), where: { !$0.isEmpty })
+        return any(separator: separator).nonEmpty
     }
     
     public var many: Parser<[Result]> {
@@ -87,8 +88,6 @@ extension Parser {
 
 extension Parser where Result: Collection {
     var nonEmpty: Parser {
-        return Parser { input in
-            self.parse(input).flatMap { Optional($0, where: { !$0.result.isEmpty }) }
-        }
+        return filter { !$0.isEmpty }
     }
 }

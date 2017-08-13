@@ -11,9 +11,31 @@ final class ParserTests: XCTestCase {
         Parser.number.assertRun("123abc", result: 123, remainder: "abc")
         Parser.number.assertFail("abc123")
     }
-
+    
     func testCharacter() {
-        Parser(.character, where: { $0 == "a" }).assertRun("abc123", result: "a", remainder: "bc123")
+        Parser.character.assertRun("abc123", result: "a", remainder: "bc123")
+        Parser.character.assertRun("123abc", result: "1", remainder: "23abc")
+    }
+
+    func testSpecificCharacter() {
+        Parser.character("a").assertSucceed("abc123", remainder: "bc123")
+        Parser.character("b").assertFail("abc123")
+    }
+    
+    func testAnyCharacter() {
+        let parser = Parser.anyCharacter(from: "abc")
+    
+        parser.assertRun("beg", result: "b", remainder: "eg")
+        parser.assertFail("ged")
+    }
+    
+    func testSpecificString() {
+        Parser.string("abc1").assertSucceed("abc123", remainder: "23")
+    }
+    
+    func testOptional() {
+        Parser.number.optional.assertRun("123abc", result: 123, remainder: "abc")
+        Parser.number.optional.assertRun("abc123", result: nil, remainder: "abc123")
     }
 
     func testAny() {
@@ -27,7 +49,7 @@ final class ParserTests: XCTestCase {
     }
 
     func testAnySeparator() {
-        let separator = Parser(.character, where: { $0 == " " })
+        let separator = Parser.character(" ")
         let parser = Parser.number.any(separator: separator)
 
         parser.assertRun("123 321 234 abc", result: [123, 321, 234], remainder: " abc")
@@ -38,11 +60,18 @@ final class ParserTests: XCTestCase {
     }
 
     func testManySeparator() {
-        let separator = Parser(.character, where: { $0 == " " })
+        let separator = Parser.character(" ")
         let parser = Parser.number.many(separator: separator)
 
         parser.assertRun("123 321 234 abc", result: [123, 321, 234], remainder: " abc")
         parser.assertRun("123 abc", result: [123], remainder: " abc")
         parser.assertFail("abc 123")
+    }
+    
+    func testOr() {
+        let parser = Parser.string("a") ?? Parser.string("BC")
+        
+        parser.assertRun("abc", result: "a", remainder: "bc")
+        parser.assertRun("BCD", result: "BC", remainder: "D")
     }
 }

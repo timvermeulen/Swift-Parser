@@ -14,12 +14,42 @@ extension Parser where Result: Equatable {
 }
 
 extension Parser {
+    func assertSucceed(_ string: String, remainder: String, file: StaticString = #file, line: UInt = #line) {
+        let parseResult = run(string)
+        XCTAssertNotNil(parseResult, file: file, line: line)
+        
+        if let (_, actualRemainder) = parseResult {
+            XCTAssertEqual(remainder, actualRemainder, file: file, line: line)
+        }
+    }
+    
     func assertFail(_ string: String, file: StaticString = #file, line: UInt = #line) {
         XCTAssertNil(run(string), file: file, line: line)
     }
 }
 
 // TODO: remove when we have conditional conformance
+
+protocol _Optional {
+    associatedtype Wrapped
+    var optional: Wrapped? { get }
+}
+
+extension Optional: _Optional {
+    var optional: Optional { return self }
+}
+
+extension Parser where Result: _Optional, Result.Wrapped: Equatable {
+    func assertRun(_ string: String, result: Result.Wrapped?, remainder: String, file: StaticString = #file, line: UInt = #line) {
+        let parseResult = run(string)
+        XCTAssertNotNil(parseResult, file: file, line: line)
+        
+        if let (actualResult, actualRemainder) = parseResult {
+            XCTAssertEqual(result, actualResult.optional, file: file, line: line)
+            XCTAssertEqual(remainder, actualRemainder, file: file, line: line)
+        }
+    }
+}
 
 protocol _Array {
     associatedtype Element

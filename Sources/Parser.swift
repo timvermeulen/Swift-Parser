@@ -38,7 +38,7 @@ extension Parser {
         return flatMap { transform($0).map { .result($0) } ?? .zero }
     }
     
-    func filter(_ predicate: @escaping (Result) -> Bool) -> Parser {
+    public func filter(_ predicate: @escaping (Result) -> Bool) -> Parser {
         return flatMap { Optional($0, where: predicate) }
     }
 }

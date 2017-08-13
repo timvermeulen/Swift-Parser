@@ -1,11 +1,10 @@
 public struct Parser<Value> {
-    internal typealias Stream = String.CharacterView
-    internal let parse: (Stream) -> (result: Value, remainder: Stream)?
+    internal let parse: (Substring) -> (result: Value, remainder: Substring)?
 }
 
 extension Parser {
     public func run(_ string: String) -> (result: Value, remainder: String)? {
-        guard let (result, remainder) = self.parse(string.characters) else { return nil }
+        guard let (result, remainder) = parse(string[...]) else { return nil }
         return (result, String(remainder))
     }
 }
@@ -39,7 +38,7 @@ extension Parser {
 
 extension Parser {
     public init(_ parser: Parser, where predicate: @escaping (Value) -> Bool) {
-        self = parser.flatMap { predicate($0) ? $0 : nil }
+        self = parser.flatMap { Optional($0, where: predicate) }
     }
 }
 
@@ -61,15 +60,15 @@ extension Parser {
         }
     }
     
-    public func any() -> Parser<[Value]> {
-        return self.any(separator: Parsers.empty)
+    public var any: Parser<[Value]> {
+        return any(separator: .empty)
     }
     
     public func many<Separator>(separator: Parser<Separator>) -> Parser<[Value]> {
-        return .init(self.any(separator: separator), where: { !$0.isEmpty })
+        return .init(any(separator: separator), where: { !$0.isEmpty })
     }
     
-    public func many() -> Parser<[Value]> {
-        return self.many(separator: Parsers.empty)
+    public var many: Parser<[Value]> {
+        return many(separator: .empty)
     }
 }

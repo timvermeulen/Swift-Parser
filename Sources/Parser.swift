@@ -1,4 +1,4 @@
-public struct Parser<Stream: StreamType, Result> {
+public struct Parser<Result, Stream: StreamType> {
     internal let parse: (Stream.SubSequence) -> (result: Result, remainder: Stream.SubSequence)?
 }
 
@@ -20,21 +20,21 @@ extension Parser {
         return Parser { _ in nil }
     }
     
-    public func map<NewResult>(_ transform: @escaping (Result) -> NewResult) -> Parser<Stream, NewResult> {
+    public func map<NewResult>(_ transform: @escaping (Result) -> NewResult) -> Parser<NewResult, Stream> {
         return .init { input in
             guard let (output, remainder) = self.parse(input) else { return nil }
             return (transform(output), remainder)
         }
     }
     
-    public func flatMap<NewResult>(_ transform: @escaping (Result) -> Parser<Stream, NewResult>) -> Parser<Stream, NewResult> {
+    public func flatMap<NewResult>(_ transform: @escaping (Result) -> Parser<NewResult, Stream>) -> Parser<NewResult, Stream> {
         return .init { input in
             guard let (output, remainder) = self.parse(input) else { return nil }
             return transform(output).parse(remainder)
         }
     }
     
-    public func flatMap<NewResult>(_ transform: @escaping (Result) -> NewResult?) -> Parser<Stream, NewResult> {
+    public func flatMap<NewResult>(_ transform: @escaping (Result) -> NewResult?) -> Parser<NewResult, Stream> {
         return flatMap { transform($0).map { .result($0) } ?? .zero }
     }
     
@@ -44,7 +44,7 @@ extension Parser {
 }
 
 extension Parser {
-    public func any<Separator>(separator: Parser<Stream, Separator>) -> Parser<Stream, [Result]> {
+    public func any<Separator>(separator: Parser<Separator, Stream>) -> Parser<[Result], Stream> {
         return .init { input in
             guard let (firstResult, firstRemainder) = self.parse(input) else { return ([], input) }
             
@@ -60,15 +60,15 @@ extension Parser {
         }
     }
     
-    public var any: Parser<Stream, [Result]> {
+    public var any: Parser<[Result], Stream> {
         return any(separator: .empty)
     }
     
-    public func many<Separator>(separator: Parser<Stream, Separator>) -> Parser<Stream, [Result]> {
+    public func many<Separator>(separator: Parser<Separator, Stream>) -> Parser<[Result], Stream> {
         return any(separator: separator).nonEmpty
     }
     
-    public var many: Parser<Stream, [Result]> {
+    public var many: Parser<[Result], Stream> {
         return many(separator: .empty)
     }
     
@@ -78,7 +78,7 @@ extension Parser {
         }
     }
     
-    public var optional: Parser<Stream, Result?> {
+    public var optional: Parser<Result?, Stream> {
         return .init { input in
             guard let (result, remainder) = self.parse(input) else { return (nil, input) }
             return (result, remainder)

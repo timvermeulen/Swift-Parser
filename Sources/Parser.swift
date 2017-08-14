@@ -84,6 +84,10 @@ extension Parser {
             return (result, remainder)
         }
     }
+    
+    public var ignored: Parser<Void, Stream> {
+        return map { _ in () }
+    }
 }
 
 extension Parser where Result: Collection {

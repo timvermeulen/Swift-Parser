@@ -1,4 +1,4 @@
-typealias StringParser<Result> = Parser<Result, String>
+public typealias StringParser<Result> = Parser<Result, String>
 
 extension Parser where Stream == String, Result == Character {
     public static let character = item

@@ -8,12 +8,12 @@ extension Parser where Stream == String, Result == Character {
     }
     
     public static func anyCharacter<S: Sequence>(from sequence: S) -> Parser where S.Element == Character {
-        return sequence.map(character).reduce(zero, { $0 ?? $1 })
+        return sequence.map(character).reduce(zero, { $0 <|> $1 })
     }
     
     public static let lowercaseLetter = character.filter(("a"..."z").contains)
     public static let uppercaseLetter = character.filter(("A"..."Z").contains)
-    public static let letter = lowercaseLetter ?? uppercaseLetter
+    public static let letter = lowercaseLetter <|> uppercaseLetter
 }
 
 extension Parser where Stream == String, Result == String {

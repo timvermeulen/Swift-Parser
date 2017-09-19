@@ -72,12 +72,6 @@ extension Parser {
         return many(separator: .empty)
     }
     
-    public static func ?? (left: Parser, right: @escaping @autoclosure () -> Parser) -> Parser {
-        return Parser { input in
-            left.parse(input) ?? right().parse(input)
-        }
-    }
-    
     public var optional: Parser<Result?, Stream> {
         return .init { input in
             guard let (result, remainder) = self.parse(input) else { return (nil, input) }
@@ -85,8 +79,12 @@ extension Parser {
         }
     }
     
+    public func onMatch<NewValue>(_ value: NewValue) -> Parser<NewValue, Stream> {
+        return map { _ in value }
+    }
+    
     public var ignored: Parser<Void, Stream> {
-        return map { _ in () }
+        return onMatch(())
     }
 }
 

@@ -14,46 +14,61 @@ precedencegroup ApplicativeSequencePrecedence {
     lowerThan: NilCoalescingPrecedence
 }
 
-infix operator <^>: ApplicativePrecedence
-infix operator >>-: MonadicPrecedenceLeft
-infix operator <*>: ApplicativePrecedence
-infix operator <* : ApplicativeSequencePrecedence
-infix operator  *>: ApplicativeSequencePrecedence
-
-public func <^> <Stream, A, B>(left: @escaping (A) -> B, right: Parser<A, Stream>) -> Parser<B, Stream> {
-    return right.map(left)
+precedencegroup AlternativePrecedence {
+    associativity: left
+    higherThan: LogicalConjunctionPrecedence
+    lowerThan: ComparisonPrecedence
 }
 
-public func >>- <Stream, A, B>(left: Parser<A, Stream>, right: @escaping (A) -> B?) -> Parser<B, Stream> {
-    return left.flatMap(right)
-}
+infix operator <^> : ApplicativePrecedence
+infix operator >>- : MonadicPrecedenceLeft
+infix operator <*> : ApplicativePrecedence
+infix operator <*  : ApplicativeSequencePrecedence
+infix operator  *> : ApplicativeSequencePrecedence
+infix operator <|> : AlternativePrecedence
 
-public func <*> <Stream, A, B>(left: Parser<(A) -> B, Stream>, right: Parser<A, Stream>) -> Parser<B, Stream> {
-    return Parser { input in
-        left.parse(input).flatMap { function, remainder1 in
-            right.parse(remainder1).map { parameter, remainder2 in
-                (function(parameter), remainder2)
+extension Parser {
+    public static func <^> <T>(left: @escaping (Result) -> T, right: Parser) -> Parser<T, Stream> {
+        return right.map(left)
+    }
+    
+    public static func >>- <T>(left: Parser, right: @escaping (Result) -> T?) -> Parser<T, Stream> {
+        return left.flatMap(right)
+    }
+    
+    public static func <*> <T>(left: Parser<(Result) -> T, Stream>, right: Parser) -> Parser<T, Stream> {
+        return .init { input in
+            left.parse(input).flatMap { result, remainder1 in
+                right.parse(remainder1).map { bla, remainder2 in
+                    (result(bla), remainder2)
+                }
             }
         }
     }
-}
-
-public func <* <Stream, A, B>(left: Parser<A, Stream>, right: Parser<B, Stream>) -> Parser<A, Stream> {
-    return Parser { input in
-        left.parse(input).flatMap { result, remainder1 in
-            right.parse(remainder1).map { _, remainder2 in
-                (result, remainder2)
+    
+    public static func <* <T>(left: Parser, right: Parser<T, Stream>) -> Parser {
+        return Parser { input in
+            left.parse(input).flatMap { result, remainder1 in
+                right.parse(remainder1).map { _, remainder2 in
+                    (result, remainder2)
+                }
             }
         }
     }
-}
-
-public func *> <Stream, A, B>(left: Parser<A, Stream>, right: Parser<B, Stream>) -> Parser<B, Stream> {
-    return Parser { input in
-        left.parse(input).flatMap { _, remainder1 in
-            right.parse(remainder1).map { result, remainder2 in
-                (result, remainder2)
+    
+    public static func *> <T>(left: Parser<T, Stream>, right: Parser) -> Parser {
+        return Parser { input in
+            left.parse(input).flatMap { _, remainder1 in
+                right.parse(remainder1).map { result, remainder2 in
+                    (result, remainder2)
+                }
             }
+        }
+    }
+    
+    public static func <|> (left: Parser, right: @escaping @autoclosure () -> Parser) -> Parser {
+        return Parser { input in
+            left.parse(input) ?? right().parse(input)
         }
     }
 }

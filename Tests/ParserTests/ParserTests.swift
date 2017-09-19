@@ -69,7 +69,7 @@ final class ParserTests: XCTestCase {
     }
     
     func testOr() {
-        let parser = Parser.string("a") ?? Parser.string("BC")
+        let parser = Parser.string("a") <|> Parser.string("BC")
         
         parser.assertRun("abc", result: "a", remainder: "bc")
         parser.assertRun("BCD", result: "BC", remainder: "D")

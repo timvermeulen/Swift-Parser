@@ -1,10 +1,10 @@
 public struct Parser<Result, Stream: StreamType> {
-    internal let parse: (Stream.SubSequence) -> (result: Result, remainder: Stream.SubSequence)?
+    internal let parse: (Stream.Substream) -> (result: Result, remainder: Stream.Substream)?
 }
 
 extension Parser {
     public func run(_ input: Stream) -> (result: Result, remainder: Stream)? {
-        guard let (result, remainder) = parse(input[...]) else { return nil }
+        guard let (result, remainder) = parse(input.asSubstream) else { return nil }
         return (result, Stream(remainder))
     }
 }
@@ -98,9 +98,6 @@ extension Parser where Result: Collection {
 
 extension Parser where Result == Stream.Element {
     public static var item: Parser {
-        return Parser { input in
-            guard let first = input.first else { return nil }
-            return (first, input.dropFirst())
-        }
+        return Parser { input in input.split() }
     }
 }

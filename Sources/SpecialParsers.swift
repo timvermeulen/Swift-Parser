@@ -14,6 +14,8 @@ extension Parser where Stream == String, Result == Character {
     public static let lowercaseLetter = character.filter(("a"..."z").contains)
     public static let uppercaseLetter = character.filter(("A"..."Z").contains)
     public static let letter = lowercaseLetter <|> uppercaseLetter
+    public static let alphaNumeric = letter <|> Parser.character.filter(("0"..."9").contains)
+    public static let whiteSpace = character(" ") <|> character("\n") <|> character("\t")
 }
 
 extension Parser where Stream == String, Result == String {
@@ -31,7 +33,7 @@ extension Parser where Stream == String, Result == String {
 }
 
 extension Parser where Stream == String, Result == Int {
-    public static let digit = Parser<Character, String>.character.flatMap { Result($0) }
+    public static let digit = Parser<Character, String>.character.flatMap { Int($0) }
     public static let number = digit.many.map { $0.reduce(0, { 10 * $0 + $1 }) }
 }
 

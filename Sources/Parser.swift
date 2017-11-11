@@ -38,13 +38,13 @@ extension Parser {
         return flatMap { transform($0).map { .result($0) } ?? .zero }
     }
     
-    public func filter(_ predicate: @escaping (Result) -> Bool) -> Parser {
+    public func when(_ predicate: @escaping (Result) -> Bool) -> Parser {
         return flatMap { Optional($0, where: predicate) }
     }
 }
 
 extension Parser {
-    public func any<Separator, C: RangeReplaceableCollection>(_: C.Type, separator: Parser<Separator, Stream>) -> Parser<C, Stream> where C.Element == Result {
+    internal func any<Separator, C: RangeReplaceableCollection>(_: C.Type, separator: Parser<Separator, Stream>) -> Parser<C, Stream> where C.Element == Result {
         return .init { input in
             guard let (firstResult, firstRemainder) = self.parse(input) else { return (C(), input) }
             
@@ -95,12 +95,28 @@ extension Parser {
 
 extension Parser where Result: Collection {
     public var nonEmpty: Parser {
-        return filter { !$0.isEmpty }
+        return when { !$0.isEmpty }
     }
 }
 
 extension Parser where Result == Stream.Element {
     public static var item: Parser {
         return Parser { input in input.split() }
+    }
+}
+
+extension Parser where Result == Stream.Element, Result: Equatable {
+    public static func item(_ result: Result) -> Parser {
+        return item.when { $0 == result }
+    }
+    
+    public static func any<S: Sequence>(from sequence: S) -> Parser where S.Element == Result {
+        return item.when(sequence.contains)
+    }
+}
+
+extension Parser where Result == Stream.Element, Result: Comparable {
+    public static func any<Range: RangeExpression>(from range: Range) -> Parser where Range.Bound == Result {
+        return item.when(range.contains)
     }
 }

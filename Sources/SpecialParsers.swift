@@ -4,18 +4,14 @@ extension Parser where Stream == String, Result == Character {
     public static let character = item
     
     public static func character(_ character: Character) -> Parser {
-        return Parser.character.filter { $0 == character }
+        return Parser.item(character)
     }
     
-    public static func anyCharacter<S: Sequence>(from sequence: S) -> Parser where S.Element == Character {
-        return sequence.map(character).reduce(zero, { $0 <|> $1 })
-    }
-    
-    public static let lowercaseLetter = character.filter(("a"..."z").contains)
-    public static let uppercaseLetter = character.filter(("A"..."Z").contains)
+    public static let lowercaseLetter = any(from: "a" ... "z")
+    public static let uppercaseLetter = any(from: "A" ... "Z")
     public static let letter = lowercaseLetter <|> uppercaseLetter
-    public static let alphaNumeric = letter <|> Parser.character.filter(("0"..."9").contains)
-    public static let whiteSpace = character(" ") <|> character("\n") <|> character("\t")
+    public static let alphaNumeric = letter <|> any(from: "0" ... "9")
+    public static let whiteSpace = any(from: [" ", "\n", "\t"])
     
     public func any<Separator>(separator: StringParser<Separator>) -> StringParser<String> {
         return any(String.self, separator: separator)

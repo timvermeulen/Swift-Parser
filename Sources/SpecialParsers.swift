@@ -16,6 +16,22 @@ extension Parser where Stream == String, Result == Character {
     public static let letter = lowercaseLetter <|> uppercaseLetter
     public static let alphaNumeric = letter <|> Parser.character.filter(("0"..."9").contains)
     public static let whiteSpace = character(" ") <|> character("\n") <|> character("\t")
+    
+    public func any<Separator>(separator: StringParser<Separator>) -> StringParser<String> {
+        return any(String.self, separator: separator)
+    }
+    
+    public var any: StringParser<String> {
+        return any(separator: .empty)
+    }
+    
+    public func many<Separator>(separator: Parser<Separator, Stream>) -> StringParser<String> {
+        return any(separator: separator).nonEmpty
+    }
+    
+    public var many: StringParser<String> {
+        return many(separator: .empty)
+    }
 }
 
 extension Parser where Stream == String, Result == String {

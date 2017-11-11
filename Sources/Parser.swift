@@ -44,12 +44,13 @@ extension Parser {
 }
 
 extension Parser {
-    public func any<Separator>(separator: Parser<Separator, Stream>) -> Parser<[Result], Stream> {
+    public func any<Separator, C: RangeReplaceableCollection>(_: C.Type, separator: Parser<Separator, Stream>) -> Parser<C, Stream> where C.Element == Result {
         return .init { input in
-            guard let (firstResult, firstRemainder) = self.parse(input) else { return ([], input) }
+            guard let (firstResult, firstRemainder) = self.parse(input) else { return (C(), input) }
             
             var remainder = firstRemainder
-            var result = [firstResult]
+            var result = C()
+            result.append(firstResult)
             
             while let (_, nextRemainder) = separator.parse(remainder), let (component, nextNextRemainder) = self.parse(nextRemainder) {
                 result.append(component)
@@ -58,6 +59,10 @@ extension Parser {
             
             return (result, remainder)
         }
+    }
+    
+    public func any<Separator>(separator: Parser<Separator, Stream>) -> Parser<[Result], Stream> {
+        return any(Array.self, separator: separator)
     }
     
     public var any: Parser<[Result], Stream> {

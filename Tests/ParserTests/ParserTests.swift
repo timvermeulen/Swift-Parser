@@ -42,6 +42,11 @@ final class ParserTests: XCTestCase {
         Parser.digit.any.assertRun("123abc", result: [1, 2, 3], remainder: "abc")
         Parser.digit.any.assertRun("abc123", result: [], remainder: "abc123")
     }
+    
+    func testAnyString() {
+        Parser.character("A").any.assertRun("AAA123", result: "AAA", remainder: "123")
+        Parser.character("A").any.assertRun("123AAA", result: "", remainder: "123AAA")
+    }
 
     func testMany() {
         Parser.digit.many.assertRun("123abc", result: [1, 2, 3], remainder: "abc")
@@ -66,6 +71,13 @@ final class ParserTests: XCTestCase {
         parser.assertRun("123 321 234 abc", result: [123, 321, 234], remainder: " abc")
         parser.assertRun("123 abc", result: [123], remainder: " abc")
         parser.assertFail("abc 123")
+    }
+    
+    func testManyStringSeparator() {
+        let parser: StringParser<String> = Parser.character("A").many(separator: .number)
+        
+        parser.assertRun("A123A456ABC789", result: "AAA", remainder: "BC789")
+        parser.assertFail("123ABC")
     }
     
     func testOr() {

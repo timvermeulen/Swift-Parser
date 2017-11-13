@@ -23,7 +23,7 @@ final class ParserTests: XCTestCase {
     }
     
     func testAnyCharacter() {
-        let parser = Parser.anyCharacter(from: "abc")
+        let parser: StringParser = Parser.any(from: "abc")
     
         parser.assertRun("beg", result: "b", remainder: "eg")
         parser.assertFail("ged")

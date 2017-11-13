@@ -1,10 +1,10 @@
 public typealias StringParser<Result> = Parser<Result, String>
 
 extension Parser where Stream == String, Result == Character {
-    public static let character = item
+    public static let character = element
     
     public static func character(_ character: Character) -> Parser {
-        return Parser.item(character)
+        return Parser.element(character)
     }
     
     public static let lowercaseLetter = any(from: "a" ... "z")
@@ -34,13 +34,7 @@ extension Parser where Stream == String, Result == String {
     public static let word = Parser<Character, String>.letter.many.map { String($0) }
     
     public static func string(_ string: String) -> Parser {
-        return Parser { input in
-            let result = string.reduce(Optional.some(input[...])) { remainder, character in
-                remainder.flatMap { Parser<Character, String>.character(character).parse($0)?.remainder }
-            }
-            
-            return result.map { (string, $0) }
-        }
+        return sequence(string)
     }
 }
 

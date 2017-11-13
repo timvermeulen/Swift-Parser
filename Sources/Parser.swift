@@ -100,23 +100,52 @@ extension Parser where Result: Collection {
 }
 
 extension Parser where Result == Stream.Element {
-    public static var item: Parser {
+    public static var element: Parser {
         return Parser { input in input.split() }
     }
 }
 
 extension Parser where Result == Stream.Element, Result: Equatable {
-    public static func item(_ result: Result) -> Parser {
-        return item.when { $0 == result }
+    public static func element(_ result: Result) -> Parser {
+        return element(where: { $0 == result })
+    }
+    
+    public static func element(where predicate: @escaping (Result) -> Bool) -> Parser {
+        return element.when(predicate)
+    }
+    
+    public static func not(_ result: Result) -> Parser {
+        return element(where: { $0 != result })
     }
     
     public static func any<S: Sequence>(from sequence: S) -> Parser where S.Element == Result {
-        return item.when(sequence.contains)
+        return element(where: sequence.contains)
+    }
+    
+    public static func any<S: Sequence>(notFrom sequence: S) -> Parser where S.Element == Result {
+        return element(where: { !sequence.contains($0) })
     }
 }
 
 extension Parser where Result == Stream.Element, Result: Comparable {
     public static func any<Range: RangeExpression>(from range: Range) -> Parser where Range.Bound == Result {
-        return item.when(range.contains)
+        return element(where: range.contains)
+    }
+}
+
+extension Parser where Result == Stream, Stream.Element: Equatable {
+    public static func sequence(_ sequence: Stream) -> Parser {
+        return Parser { input in
+            var subsequence = sequence.asSubstream
+            var remainder = input
+            
+            while let (head, tail) = subsequence.split() {
+                guard let (_, newRemainder) = Parser<Stream.Element, Stream>.element(head).parse(remainder) else { return nil }
+                remainder = newRemainder
+                subsequence = tail
+            }
+            
+            return (sequence, remainder)
+        }
     }
 }

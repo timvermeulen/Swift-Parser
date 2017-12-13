@@ -19,7 +19,7 @@ extension Collection where Self: StreamType {
 }
 
 extension Collection where Self: SubstreamType, SubSequence == Self {
-    public func split() -> (Element, Self)? {
+    public func split() -> (Self.Element, Self)? {
         return first.map { ($0, dropFirst()) }
     }
 }

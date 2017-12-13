@@ -40,11 +40,36 @@ extension Parser where Stream == String, Result == String {
 
 extension Parser where Stream == String, Result == Int {
     public static let digit = Parser<Character, String>.character.flatMap { Int($0) }
-    public static let number = digit.many.map { $0.reduce(0, { 10 * $0 + $1 }) }
+    
+    public static var number: Parser {
+        let sign = StringParser<Character>.character("-").optional.map { $0 == nil }
+        let tuple = makeTuple <^> sign <*> digit.many.map { $0.reduce(0, { 10 * $0 + $1 }) }
+        return tuple.map { $0 ? $1 : -$1 }
+    }
 }
 
 extension Parser where Result == Void {
     public static var empty: Parser {
         return Parser { ((), $0) }
+    }
+}
+
+extension Parser where Result: RawRepresentable, Result.RawValue == String, Stream == String {
+    static func value(_: Result.Type) -> Parser {
+        return Parser { input -> (result: Result, remainder: Substring)? in
+            var remainder = input
+            var rawValue = ""
+            
+            while let (head, tail) = remainder.split() {
+                remainder = tail
+                rawValue.append(head)
+                
+                if let result = Result(rawValue: rawValue) {
+                    return (result, remainder)
+                }
+            }
+            
+            return nil
+        }
     }
 }

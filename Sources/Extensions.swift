@@ -1,5 +1,5 @@
 extension FixedWidthInteger {
-    internal init?(_ character: Character, radix: Int = 10) {
+    init?(_ character: Character, radix: Int = 10) {
         self.init(String(character), radix: radix)
     }
 }

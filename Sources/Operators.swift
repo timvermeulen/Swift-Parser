@@ -28,26 +28,16 @@ infix operator  *> : ApplicativeSequencePrecedence
 infix operator <|> : AlternativePrecedence
 
 extension Parser {
-    public static func <^> <T>(left: @escaping (Result) -> T, right: Parser) -> Parser<T, Stream> {
-        return right.map(left)
+    public static func <^> <T>(left: @escaping (Output) -> T, right: Parser) -> Parser<T, Stream> {
+        right.map(left)
     }
     
-    public static func >>- <T>(left: Parser, right: @escaping (Result) -> T?) -> Parser<T, Stream> {
-        return left.flatMap(right)
+    public static func <*> <T>(left: Parser<(Output) -> T, Stream>, right: Parser) -> Parser<T, Stream> {
+        left.flatMap { $0 <^> right }
     }
     
-    public static func <*> <T>(left: Parser<(Result) -> T, Stream>, right: Parser) -> Parser<T, Stream> {
-        return .init { input in
-            left.parse(input).flatMap { result, remainder1 in
-                right.parse(remainder1).map { bla, remainder2 in
-                    (result(bla), remainder2)
-                }
-            }
-        }
-    }
-    
-    public static func <* <T>(left: Parser, right: Parser<T, Stream>) -> Parser {
-        return Parser { input in
+    public static func <* <T>(left: Parser, right: Parser<T, Stream>) -> Self {
+        .init { input in
             left.parse(input).flatMap { result, remainder1 in
                 right.parse(remainder1).map { _, remainder2 in
                     (result, remainder2)
@@ -56,8 +46,8 @@ extension Parser {
         }
     }
     
-    public static func *> <T>(left: Parser<T, Stream>, right: Parser) -> Parser {
-        return Parser { input in
+    public static func *> <T>(left: Parser<T, Stream>, right: Parser) -> Self {
+        .init { input in
             left.parse(input).flatMap { _, remainder1 in
                 right.parse(remainder1).map { result, remainder2 in
                     (result, remainder2)
@@ -66,8 +56,8 @@ extension Parser {
         }
     }
     
-    public static func <|> (left: Parser, right: @escaping @autoclosure () -> Parser) -> Parser {
-        return Parser { input in
+    public static func <|> (left: Parser, right: @escaping @autoclosure () -> Parser) -> Self {
+        .init { input in
             left.parse(input) ?? right().parse(input)
         }
     }

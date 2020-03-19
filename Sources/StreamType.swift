@@ -14,13 +14,13 @@ public protocol SubstreamType {
 
 extension Collection where Self: StreamType {
     public var asSubstream: SubSequence {
-        return self[...]
+        self[...]
     }
 }
 
 extension Collection where Self: SubstreamType, SubSequence == Self {
     public func split() -> (Self.Element, Self)? {
-        return first.map { ($0, dropFirst()) }
+        first.map { ($0, dropFirst()) }
     }
 }
 
